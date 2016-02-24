@@ -5,4 +5,8 @@ CC = g++
 all: reco
 
 reco: reco.cpp
-	$(CC) reco.cpp -o reco $(CFLAGS)
+	$(CC) reco.cpp -o recognition $(CFLAGS)
+
+
+clean: recognition
+	rm -rf recognition
