@@ -131,8 +131,8 @@ int main(int argc, const char *argv[]) {
     // to 0.0 without retraining the model. This can be useful if
     // you are evaluating the model:
     //
-    model->set("threshold",40);
-     // Now the threshold of this model is set to 0.0. A prediction
+    model->set("threshold", 30);
+    // Now the threshold of this model is set to 0.0. A prediction
     // now returns -1, as it's impossible to have a distance below
     // it
     predictedLabel = model->predict(testSample);

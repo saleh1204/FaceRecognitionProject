@@ -131,7 +131,7 @@ int main(int argc, const char *argv[]) {
     // to 0.0 without retraining the model. This can be useful if
     // you are evaluating the model:
     //
-    model->set("threshold",40);
+    model->set("threshold", );
      // Now the threshold of this model is set to 0.0. A prediction
     // now returns -1, as it's impossible to have a distance below
     // it
@@ -140,6 +140,10 @@ int main(int argc, const char *argv[]) {
     // Show some informations about the model, as there's no cool
     // Model data to display as in Eigenfaces/Fisherfaces.
     // Due to efficiency reasons the LBP images are not stored
+
+
+
+
     // within the model:
     cout << "Model Information:" << endl;
     string model_info = format("\tLBPH(radius=%i, neighbors=%i, grid_x=%i, grid_y=%i, threshold=%.2f)",
@@ -155,3 +159,4 @@ int main(int argc, const char *argv[]) {
     cout << "Size of the histograms: " << histograms[0].total() << endl;
     return 0;
 }
+
