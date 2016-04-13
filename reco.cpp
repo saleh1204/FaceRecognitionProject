@@ -48,21 +48,32 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 int main(int argc, const char *argv[]) {
     // Check for valid command line arguments, print usage
     // if no arguments were given.
-    if (argc != 2) {
-        cout << "usage: " << argv[0] << " <csv.ext>" << endl;
+    if (argc != 3) {
+        cout << "usage: " << argv[0] << " <csvTraining.ext> <csvTesting.ext> " << endl;
         exit(1);
     }
-    // Get the path to your CSV.
+
+    // Get the path to your Training CSV.
     string fn_csv = string(argv[1]);
+	// Get the path to your Testing CSV .
+    string fn_csv_test = string(argv[2]);
     // These vectors hold the images and corresponding labels.
-    vector<Mat> images;
-    vector<int> labels;
+    vector<Mat> images, imagesTesting;
+    vector<int> labels, labelsTesting;
     // Read in the data. This can fail if no valid
     // input filename is given.
+	cout << "Reading Images" << endl;
     try {
         read_csv(fn_csv, images, labels);
     } catch (cv::Exception& e) {
         cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
+        // nothing more we can do
+        exit(1);
+    }
+	try {
+        read_csv(fn_csv_test, imagesTesting, labelsTesting);
+    } catch (cv::Exception& e) {
+        cerr << "Error opening file \"" << fn_csv_test << "\". Reason: " << e.msg << endl;
         // nothing more we can do
         exit(1);
     }
@@ -75,17 +86,18 @@ int main(int argc, const char *argv[]) {
     // later in code to reshape the images to their original
     // size:
     int height = images[0].rows;
+	
     // The following lines simply get the last images from
     // your dataset and remove it from the vector. This is
     // done, so that the training data (which we learn the
     // cv::FaceRecognizer on) and the test data we test
     // the model with, do not overlap.
-    Mat testSample = images[images.size() - 1];
+    //Mat testSample = images[images.size() - 22];
    // Mat testSample = images[0];
    // int testLabel = labels[0];
-    int testLabel = labels[labels.size() - 1];
-    images.pop_back();
-    labels.pop_back();
+    //int testLabel = labels[labels.size() - 22];
+   // images.pop_back();
+    //labels.pop_back();
     // The following lines create an LBPH model for
     // face recognition and train it with the images and
     // labels read from the given CSV file.
@@ -108,20 +120,27 @@ int main(int argc, const char *argv[]) {
     //
     //      cv::createLBPHFaceRecognizer(1,8,8,8,123.0)
     //
+	cout << "Training The Recognizer with "<<images.size()<<" images \nIt may take some time" << endl;
     Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();
     model->train(images, labels);
     // The following line predicts the label of a given
     // test image:
-    int predictedLabel = model->predict(testSample);
-    //
-    // To get the confidence of a prediction call the model with:
-    //
-    //      int predictedLabel = -1;
-    //      double confidence = 0.0;
-    //      model->predict(testSample, predictedLabel, confidence);
-    //
-    string result_message = format("Predicted class = %d / Actual class = %d.", predictedLabel, testLabel);
-    cout << result_message << endl;
+	 model->set("threshold",25);
+	
+	cout << "Start testing " << labelsTesting.size() << " images one by one"<< endl;
+	for (int i=0; i<labelsTesting.size();i++)
+	{
+		int predictedLabel = model->predict(imagesTesting[i]);
+		//
+		// To get the confidence of a prediction call the model with:
+		//
+		//      int predictedLabel = -1;
+		//      double confidence = 0.0;
+		//      model->predict(testSample, predictedLabel, confidence);
+		//
+		string result_message = format("Image : %d   Predicted class = %d / Actual class = %d.", i,predictedLabel, labelsTesting[i]);
+		cout << result_message << endl;
+	}
     // Sometimes you'll need to get/set internal model data,
     // which isn't exposed by the public cv::FaceRecognizer.
     // Since each cv::FaceRecognizer is derived from a
@@ -131,12 +150,12 @@ int main(int argc, const char *argv[]) {
     // to 0.0 without retraining the model. This can be useful if
     // you are evaluating the model:
     //
-    model->set("threshold",40);
+    //model->set("threshold",25);
      // Now the threshold of this model is set to 0.0. A prediction
     // now returns -1, as it's impossible to have a distance below
     // it
-    predictedLabel = model->predict(testSample);
-    cout << "Predicted class = " << predictedLabel << endl;
+    //predictedLabel = model->predict(testSample);
+    //cout << "Predicted class = " << predictedLabel << endl;
     // Show some informations about the model, as there's no cool
     // Model data to display as in Eigenfaces/Fisherfaces.
     // Due to efficiency reasons the LBP images are not stored
