@@ -1,21 +1,3 @@
-/*
- * Copyright (c) 2011. Philipp Wagner <bytefish[at]gmx[dot]de>.
- * Released to public domain under terms of the BSD Simplified license.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in the
- *     documentation and/or other materials provided with the distribution.
- *   * Neither the name of the organization nor the names of its contributors
- *     may be used to endorse or promote products derived from this software
- *     without specific prior written permission.
- *
- *   See <http://www.opensource.org/licenses/bsd-license>
- */
-
 #include "opencv2/core/core.hpp"
 #include "opencv2/contrib/contrib.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -87,17 +69,6 @@ int main(int argc, const char *argv[]) {
     // size:
     int height = images[0].rows;
 	
-    // The following lines simply get the last images from
-    // your dataset and remove it from the vector. This is
-    // done, so that the training data (which we learn the
-    // cv::FaceRecognizer on) and the test data we test
-    // the model with, do not overlap.
-    //Mat testSample = images[images.size() - 22];
-   // Mat testSample = images[0];
-   // int testLabel = labels[0];
-    //int testLabel = labels[labels.size() - 22];
-   // images.pop_back();
-    //labels.pop_back();
     // The following lines create an LBPH model for
     // face recognition and train it with the images and
     // labels read from the given CSV file.
@@ -120,27 +91,48 @@ int main(int argc, const char *argv[]) {
     //
     //      cv::createLBPHFaceRecognizer(1,8,8,8,123.0)
     //
-	cout << "Training The Recognizer with "<<images.size()<<" images \nIt may take some time" << endl;
-    Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();
-    model->train(images, labels);
-    // The following line predicts the label of a given
-    // test image:
-	 model->set("threshold",25);
 	
+	// Training Stage
+	cout << "Training The Recognizer with "<<images.size()<<" images \nIt may take some time" << endl;
+	Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();
+    model->train(images, labels);
+	
+	
+	// Setting Threshold 
+	model->set("threshold",75);
+	
+	
+	// Testing Stage
+	int mispredicted = 0;
+	int unpredicted = 0;
+	int predictedLabel = 0;
+	double confidence = 0;
 	cout << "Start testing " << labelsTesting.size() << " images one by one"<< endl;
+	#pragma omp parallel for ordered schedule(dynamic) //num_threads(8)
 	for (int i=0; i<labelsTesting.size();i++)
 	{
-		int predictedLabel = model->predict(imagesTesting[i]);
+		//predictedLabel = model->predict(imagesTesting[i]);
 		//
 		// To get the confidence of a prediction call the model with:
 		//
 		//      int predictedLabel = -1;
 		//      double confidence = 0.0;
-		//      model->predict(testSample, predictedLabel, confidence);
+		model->predict(imagesTesting[i], predictedLabel, confidence);
 		//
-		string result_message = format("Image : %d   Predicted class = %d / Actual class = %d.", i,predictedLabel, labelsTesting[i]);
+		if (predictedLabel == -1)
+		{
+			unpredicted++;
+		}
+		if (predictedLabel != labelsTesting[i] && predictedLabel != -1)
+		{
+			mispredicted++;
+		}
+		string result_message = format("Image : %03d   Predicted class = %02d / Actual class = %02d / with Confidence %02.3f.", i,predictedLabel,labelsTesting[i], confidence);
 		cout << result_message << endl;
 	}
+	cout << "Unrecognized : " << unpredicted << endl;
+	cout << "Mispredicted : " << mispredicted << endl;
+	
     // Sometimes you'll need to get/set internal model data,
     // which isn't exposed by the public cv::FaceRecognizer.
     // Since each cv::FaceRecognizer is derived from a
@@ -156,6 +148,9 @@ int main(int argc, const char *argv[]) {
     // it
     //predictedLabel = model->predict(testSample);
     //cout << "Predicted class = " << predictedLabel << endl;
+	
+	
+	
     // Show some informations about the model, as there's no cool
     // Model data to display as in Eigenfaces/Fisherfaces.
     // Due to efficiency reasons the LBP images are not stored

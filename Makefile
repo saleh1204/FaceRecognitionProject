@@ -5,8 +5,12 @@ CC = g++
 all: reco
 
 reco: reco.cpp
-	$(CC) reco.cpp -o recognition $(CFLAGS)
+	$(CC) reco.cpp -fopenmp -o recognition $(CFLAGS)
 
 
+	
+video: faceRecoVideo.cpp
+	$(CC) faceRecoVideo.cpp -o videoRecognition $(CFLAGS)
+	
 clean: recognition
-	rm -rf recognition
+	rm -rf recognition videoRecognition
