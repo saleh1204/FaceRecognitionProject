@@ -123,7 +123,7 @@ int main(int argc, const char *argv[]) {
 	
 	
 	// Setting Threshold 
-	model->set("threshold",60);
+	model->set("threshold",64);
 	
 	
 	// Testing Stage
@@ -161,7 +161,7 @@ int main(int argc, const char *argv[]) {
 	accuracy = accuracy / (1.0*labelsTesting.size());
 	accuracy = accuracy * 100.00;
 	//(((labelsTesting.size()-(unpredicted+mispredicted))/labelsTesting.size()) * 100.0); 
-	string acc = format("Number of Test Subjects is : %d\tNumber of Test Images is : %d \nAccuracy is %.3f %", (labelsTesting[labelsTesting.size()-1] + 1),labelsTesting.size(),accuracy); 
+	string acc = format("Number of Test Subjects is : %d\tNumber of Test Images is : %d \nAccuracy is %.3f %%", (labelsTesting[labelsTesting.size()-1] + 1),labelsTesting.size(),accuracy); 
 	// Sometimes you'll need to get/set internal model data,
 	Color::Modifier red(Color::FG_RED);
 	Color::Modifier green(Color::FG_GREEN);
