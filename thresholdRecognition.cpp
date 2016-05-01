@@ -54,7 +54,7 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 
 double get_best_closer_threshold(vector<Mat> imagesTesting, vector<int> labelsTesting, double initial_threshold)
 {
-			
+	bool add = false;
 	Color::Modifier red(Color::FG_RED);
 	Color::Modifier green(Color::FG_GREEN);
 	Color::Modifier blue(Color::FG_BLUE);
@@ -72,7 +72,7 @@ double get_best_closer_threshold(vector<Mat> imagesTesting, vector<int> labelsTe
 		int unpredicted = 0;
 		int predictedLabel = 0;
 		double confidence = 0;
-		cout << red << "Start testing " << labelsTesting.size() << " images one by one with threshold = "<< threshold << "\t It will take a while" << def << endl;
+		cout << red << "\tStart testing " << labelsTesting.size() << " images one by one with threshold = "<< threshold << "\t It will take a while" << def << endl;
 		for (int i=0; i<labelsTesting.size();i++)
 		{
 			model->predict(imagesTesting[i], predictedLabel, confidence);
@@ -88,39 +88,62 @@ double get_best_closer_threshold(vector<Mat> imagesTesting, vector<int> labelsTe
 			}
 
 		}
-		cout << "Unrecognized : " << unpredicted << endl; cout << "Mispredicted : " << mispredicted << endl; 
+		cout << "\t\tUnrecognized : " << unpredicted << endl; cout << "\t\tMispredicted : " << mispredicted << endl; 
 		double accuracy = double (labelsTesting.size() - unpredicted);
 		accuracy = accuracy - mispredicted;
 		accuracy = accuracy / (1.0*labelsTesting.size());
 		accuracy = accuracy * 100.00;
 		
 		string thresholdStr = format("\tThreshold: %.2f", threshold);
-		string accStr = format ("Accuracy: %.3f ",accuracy);
+		string accStr = format ("\t\tAccuracy: %.3f %%",accuracy);
 
 		
 		cout << green << accStr << blue << thresholdStr << def << endl;
 		oldAcc = newAcc;
 		newAcc = accuracy;
 		if (unpredicted >= mispredicted)
+		{
 			threshold = threshold + change;
+			add = true;
+		}
 		else
+		{
 			threshold = threshold - change;
+			add = false;
+		}
 	}
+	if (add)
+	{
+		threshold = threshold - change;
+	}
+	else
+	{
+		threshold = threshold + change;
+	}
+	return threshold;
 }
-void my_thresholding_algo(vector<Mat> images, vector<int> labels)
+double my_thresholding_algo(vector<Mat> images, vector<int> labels)
 {
-	double L = 1, H = 100, M, newMid;
+	double L = 1, H = 200, M, newMid;
+	cout << "Going inside getCloser threshold function with threshold : " << L << endl;
 	L = get_best_closer_threshold(images, labels, L);
+	cout << "Get Closer Threshold returned : " << L << endl;
+	cout << "Going inside getCloser threshold function with threshold : " << H << endl;
 	H = get_best_closer_threshold(images, labels, H);
+	cout << "Get Closer Threshold returned : " << H << endl;
 	do
 	{
 		M = (L+H)/2;
+		cout << "Going inside getCloser threshold function with threshold : " << M << endl;
 		newMid = get_best_closer_threshold(images, labels, M);
-		
+		cout << "Get Closer Threshold returned : " << newMid <<endl;
+
 		if (newMid > M) L = newMid;
 		else if (newMid < M) H = newMid;
 		else break;
 	}while(H - L > 0.5);
+	cout << "\n\nH = " << H << "\t L = " << L << "\t M = "<< newMid << endl;
+	return newMid;
 	
 }
 
@@ -175,7 +198,7 @@ int main(int argc, const char *argv[]) {
 	cout << "Training The Recognizer with "<<images.size()<<" images \nIt may take some time" << endl;
 	//Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();
 	model = createLBPHFaceRecognizer();
-	model->train(images, labels, model);
+	model->train(images, labels);
 	
 	
 	// Testing Stage
