@@ -3,12 +3,13 @@ CFLAGS = `pkg-config --cflags --libs opencv`
 CC = g++
 
 
-all: reco
+all: reco thresholding
 
 reco: reco.cpp
 	$(CC) reco.cpp -fopenmp -o recognition $(CFLAGS)
 
-
+thresholding: thresholdRecognition.cpp
+	$(CC) thresholdRecognition.cpp -fopenmp -o RecognitionThresholding $(CFLAGS)
 	
 video: faceRecoVideo.cpp
 	$(CC) faceRecoVideo.cpp -o videoRecognition $(CFLAGS)
