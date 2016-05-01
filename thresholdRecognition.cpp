@@ -54,6 +54,11 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 
 double get_best_closer_threshold(vector<Mat> imagesTesting, vector<int> labelsTesting, double initial_threshold)
 {
+			
+	Color::Modifier red(Color::FG_RED);
+	Color::Modifier green(Color::FG_GREEN);
+	Color::Modifier blue(Color::FG_BLUE);
+	Color::Modifier def(Color::FG_DEFAULT);
 	double oldAcc =0, newAcc = 1, change = 3;
 	double threshold = initial_threshold;
 	while (abs(newAcc - oldAcc) > 0.3)
@@ -67,7 +72,7 @@ double get_best_closer_threshold(vector<Mat> imagesTesting, vector<int> labelsTe
 		int unpredicted = 0;
 		int predictedLabel = 0;
 		double confidence = 0;
-		cout << "Start testing " << labelsTesting.size() << " images one by one with threshold = "<< threshold << endl;
+		cout << red << "Start testing " << labelsTesting.size() << " images one by one with threshold = "<< threshold << "\t It will take a while" << def << endl;
 		for (int i=0; i<labelsTesting.size();i++)
 		{
 			model->predict(imagesTesting[i], predictedLabel, confidence);
@@ -81,23 +86,18 @@ double get_best_closer_threshold(vector<Mat> imagesTesting, vector<int> labelsTe
 			{
 				mispredicted++;
 			}
-			//string result_message = format("Image : %03d   Predicted class = %02d / Actual class = %02d / with Confidence %02.3f.", i,predictedLabel,labelsTesting[i], confidence);
-			//cout << result_message << endl;
+
 		}
 		cout << "Unrecognized : " << unpredicted << endl; cout << "Mispredicted : " << mispredicted << endl; 
 		double accuracy = double (labelsTesting.size() - unpredicted);
 		accuracy = accuracy - mispredicted;
 		accuracy = accuracy / (1.0*labelsTesting.size());
 		accuracy = accuracy * 100.00;
-		//(((labelsTesting.size()-(unpredicted+mispredicted))/labelsTesting.size()) * 100.0); 
-		//string acc = format("Number of Test Subjects is : %d\tNumber of Test Images is : %d \nAccuracy is %.3f %%", (labelsTesting[labelsTesting.size()-1] + 1),labelsTesting.size(),accuracy); 
 		
-		string thresholdStr = format("\tThreshold: %.2", threshold);
+		string thresholdStr = format("\tThreshold: %.2f", threshold);
 		string accStr = format ("Accuracy: %.3f ",accuracy);
-		//Color::Modifier red(Color::FG_RED);
-		Color::Modifier green(Color::FG_GREEN);
-		Color::Modifier blue(Color::FG_BLUE);
-		Color::Modifier def(Color::FG_DEFAULT);
+
+		
 		cout << green << accStr << blue << thresholdStr << def << endl;
 		oldAcc = newAcc;
 		newAcc = accuracy;
@@ -175,7 +175,7 @@ int main(int argc, const char *argv[]) {
 	cout << "Training The Recognizer with "<<images.size()<<" images \nIt may take some time" << endl;
 	//Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();
 	model = createLBPHFaceRecognizer();
-	model->train(images, labels);
+	model->train(images, labels, model);
 	
 	
 	// Testing Stage
