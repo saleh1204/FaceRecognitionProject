@@ -15,4 +15,4 @@ video: faceRecoVideo.cpp
 	$(CC) faceRecoVideo.cpp -o videoRecognition $(CFLAGS)
 	
 clean: recognition
-	rm -rf recognition videoRecognition
+	rm -rf recognition videoRecognition RecognitionThresholding

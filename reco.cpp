@@ -127,16 +127,18 @@ int main(int argc, const char *argv[]) {
 	cout << "Training The Recognizer with "<<images.size()<<" images \nIt may take some time" << endl;
 	Ptr<FaceRecognizer> model = createLBPHFaceRecognizer();
 	model->train(images, labels);
-	
-	while (abs(newAcc - oldAcc) > 0.3)
+	int mispredicted = 10;
+	int unpredicted = 0;
+	//abs(newAcc - oldAcc) > 0.3
+	while (abs(mispredicted - unpredicted) >= 3)
 	{
 		// Setting Threshold 
 		model->set("threshold",threshold);
 	
 	
 		// Testing Stage
-		int mispredicted = 0;
-		int unpredicted = 0;
+		mispredicted = 0;
+		unpredicted = 0;
 		int predictedLabel = 0;
 		double confidence = 0;
 		cout << "Start testing " << labelsTesting.size() << " images one by one with threshold = "<< threshold << endl;
@@ -159,8 +161,8 @@ int main(int argc, const char *argv[]) {
 			{
 				mispredicted++;
 			}
-			string result_message = format("Image : %03d   Predicted class = %02d / Actual class = %02d / with Confidence %02.3f.", i,predictedLabel,labelsTesting[i], confidence);
-			cout << result_message << endl;
+			//string result_message = format("Image : %03d   Predicted class = %02d / Actual class = %02d / with Confidence %02.3f.", i,predictedLabel,labelsTesting[i], confidence);
+			//cout << result_message << endl;
 		}
 		cout << "Unrecognized : " << unpredicted << endl; cout << "Mispredicted : " << mispredicted << endl; 
 		double accuracy = double (labelsTesting.size() - unpredicted);
