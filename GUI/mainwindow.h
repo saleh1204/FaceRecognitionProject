@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-
+#include <string>
 namespace Ui {
 class MainWindow;
 }
@@ -24,8 +24,8 @@ private slots:
 
     void on_img1_rubberBandChanged(const QRect &viewportRect, const QPointF &fromScenePoint, const QPointF &toScenePoint);
 
-private:
-    Ui::MainWindow *ui;
+public:
+    Ui::MainWindow *ui1;
 };
 
 #endif // MAINWINDOW_H

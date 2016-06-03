@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QFileDialog>
 #include <iostream>
+#include <pthread.h>
 //#include <QtGui/QApplication>
 #include <QGraphicsScene>
 #include <QGraphicsView>
@@ -26,7 +27,7 @@ vector<Mat> images, imagesTesting;
 vector<int> labels, labelsTesting;
 vector<string> trainingPath, testingPath;
 Ptr<FaceRecognizer> model;
-double myThreshold = 100;
+double myThreshold = 50;
 // Testing Variables
 int mispredicted = 0; // You can acess the label by typing ui->mispredicted_lbl and the other values are the same
 int unpredicted = 0;
@@ -34,6 +35,9 @@ int predictedLabel = 0;
 double confidence = 0;
 int totalTestingImageNumber = 0;
 int testIndex = 0;
+
+// User Interface handler
+Ui::MainWindow *ui;
 
 static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator, vector<string>& paths) {
     std::ifstream file(filename.c_str(), ifstream::in);
@@ -58,44 +62,78 @@ static void read_csv(const string& filename, vector<Mat>& images, vector<int>& l
 
 
 
+
+
 string trainingFile, testingFile;
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui1(new Ui::MainWindow)
 {
-    ui->setupUi(this);
+
+    	ui1->setupUi(this);
+	ui = ui1;
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
+    delete ui1;
 }
+
+
+void *handleReadingTestingCSV(void *threadid)
+{
+   	string fileName;
+   	fileName = (char *)threadid;
+	cout << "File Name : " << fileName << endl;
+	ui->status_lbl->setText("Status: Reading Images");
+	try {
+      	  read_csv(fileName, imagesTesting, labelsTesting, ';',testingPath);
+    	} catch (cv::Exception& e) {
+      	  cerr << "Error opening file \"" << fileName << "\". Reason: " << e.msg << endl;
+      	  // nothing more we can do
+      	  exit(1);
+    	}
+	totalTestingImageNumber = labelsTesting.size();
+
+   	ui->status_lbl->setText("Status: Done");
+	QString total = "Total Number of Tested Images: "+ QString::number(totalTestingImageNumber) ;
+	ui->totalTestingImageNumber_lbl->setText(total);
+   	pthread_exit(NULL);
+}
+
+void *handleReadingTrainingCSV(void *threadid)
+{
+   	string fileName;
+   	fileName = (char *)threadid;
+	cout << "File Name : " << fileName << endl;
+	
+	try {
+		ui->status_lbl->setText("Status: Reading File");
+        	read_csv(fileName, images, labels, ';',trainingPath);
+		model = createLBPHFaceRecognizer();
+		ui->status_lbl->setText("Status: Wait.. training..");
+		model->train(images, labels);
+		cout << "Done Training" << endl;
+		model->set("threshold",myThreshold);
+    	} catch (cv::Exception& e) {
+        	cerr << "Error opening file \"" << fileName << "\". Reason: " << e.msg << endl;
+        	// nothing more we can do
+        	exit(1);
+    	}
+
+	ui->status_lbl->setText("Status: Ready");
+   	pthread_exit(NULL);
+}
+
 
 void MainWindow::on_uploadTest_clicked()
 {
-    //refrence http://doc.qt.io/qt-4.8/qfiledialog.html#QFileDialog
-/*
-    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
-                                                    "/home",
-                                                    QFileDialog::ShowDirsOnly
-                                                    | QFileDialog::DontResolveSymlinks);
-													*/
-    //Dir is the path of folder
+	pthread_t thread;
 	QString filename = QFileDialog::getOpenFileName(this, tr("Open Testing File"), "/home/pi/Desktop/FaceRecognitionProject/GUI", tr("CSV Files (*.CSV)"));
 	std::string sfilename = filename.toUtf8().constData();
 	std::cout << sfilename << std::endl;
-	try {
-        read_csv(sfilename, imagesTesting, labelsTesting, ';',testingPath);
-    } catch (cv::Exception& e) {
-        cerr << "Error opening file \"" << sfilename << "\". Reason: " << e.msg << endl;
-        // nothing more we can do
-        exit(1);
-    }
-	totalTestingImageNumber = labelsTesting.size();
+	pthread_create(&thread, NULL, handleReadingTestingCSV, (void *)sfilename.c_str());
 
-    ui->status_lbl->setText("Status: Done");
-	QString total = "Total Number of Tested Images: "+ QString::number(totalTestingImageNumber) ;
-	ui->totalTestingImageNumber_lbl->setText(total);
 
 
 
@@ -107,98 +145,92 @@ QString unp;
 QString mis;
 void MainWindow::on_testBt_clicked()
 {
-// here shuld be the Recognizer
-    //Now create an image
-    //QImage image(testingPath[testIndex]);
+
 	string imPath = testingPath[testIndex];
 	QImage image(imPath.c_str());
-    QGraphicsPixmapItem* item = new QGraphicsPixmapItem(QPixmap::fromImage(image));
+    	QGraphicsPixmapItem* item = new QGraphicsPixmapItem(QPixmap::fromImage(image));
 
-    // add the image to a scene
-    QGraphicsScene* scene = new QGraphicsScene();
-    scene->addItem(item);
-    // add the scene to the image viewer
-    ui->img1->setScene(scene);
+    	// add the image to a scene
+    	QGraphicsScene* scene = new QGraphicsScene();
+    	scene->addItem(item);
+    	// add the scene to the image viewer
+    	ui->img1->setScene(scene);
 
-   // Testing 
+   	// Testing 
 
-    ui->status_lbl->setText("Status: Testing...");
+    	ui->status_lbl->setText("Status: Testing...");
 
 	model->predict(imagesTesting[testIndex], predictedLabel, confidence);
-   // Ready
 
-    ui->status_lbl->setText("Status: Ready");
+    	ui->status_lbl->setText("Status: Ready");
 
 
 	if (predictedLabel == -1)
 	{
 		unpredicted++;
-         unp= "Unpredicted: "+ QString::number(unpredicted) ;
-        ui-> unpredicted_lbl->setText(unp);
+         	unp= "Unpredicted: "+ QString::number(unpredicted) ;
+        	ui-> unpredicted_lbl->setText(unp);
 		confidence = -1.0;
+		string unpredictedPath = "unpredicted.png";
+		QImage image2(unpredictedPath.c_str());
+		QGraphicsPixmapItem* item2 = new QGraphicsPixmapItem(QPixmap::fromImage(image2));
+		// add the image to a scene
+		QGraphicsScene* scene2 = new QGraphicsScene();
+		scene2->addItem(item2);
+    		// add the scene to the image viewer
+		ui->img2->setScene(scene2);
+		ui->status_lbl->setText("Status: Could not Predict :(");
 	}
 	else if (predictedLabel != labelsTesting[testIndex] && predictedLabel != -1)
 	{
-        mispredicted++;
-         
-		
+        	mispredicted++;
+         	// Display images
+		int pos = std::find(labels.begin(), labels.end(), predictedLabel) - labels.begin();
+		cout << pos << "\t Path: " << trainingPath[pos] <<endl;
+		string imPath2 = trainingPath[pos];
+		QImage image2(imPath2.c_str());
+		QGraphicsPixmapItem* item2 = new QGraphicsPixmapItem(QPixmap::fromImage(image2));
+		// add the image to a scene
+		QGraphicsScene* scene2 = new QGraphicsScene();
+		scene2->addItem(item2);
+    		// add the scene to the image viewer
+		ui->img2->setScene(scene2);
+		ui->status_lbl->setText("Status: Mistakenly Predicted :(");
 	}
 	else
 	{
 		// Display images
 		int pos = std::find(labels.begin(), labels.end(), predictedLabel) - labels.begin();
-		//int* imgIndex = std::find(labels.begin(), labels.end(), &predictedLabel) ;
 		cout << pos << "\t Path: " << trainingPath[pos] <<endl;
 		string imPath2 = trainingPath[pos];
 		QImage image2(imPath2.c_str());
 		QGraphicsPixmapItem* item2 = new QGraphicsPixmapItem(QPixmap::fromImage(image2));
-
 		// add the image to a scene
 		QGraphicsScene* scene2 = new QGraphicsScene();
 		scene2->addItem(item2);
-    // add the scene to the image viewer
+    		// add the scene to the image viewer
 		ui->img2->setScene(scene2);
-		//images[imgIndex];
+		ui->status_lbl->setText("Status: Correctly Predicted :)");
 	}	
 	mis= "Mispredicted: "+ QString::number(mispredicted) ;
-    ui-> mispredicted_lbl->setText(mis);
+    	ui-> mispredicted_lbl->setText(mis);
 	unp= "Unpredicted: "+ QString::number(unpredicted) ;
-    ui-> unpredicted_lbl->setText(unp);
+    	ui-> unpredicted_lbl->setText(unp);
 	testIndex++;
-   // ui->label= ui->label+stTest;
-
-     pl= "Predicted Label: "+ QString::number(predictedLabel) ;
-    ui->predictedLabel_lbl->setText(pl);
-
-     con= "Confidence: "+ QString::number(confidence) ;
-    ui->confidence_lbl->setText(con);
+	pl= "Predicted Label: "+ QString::number(predictedLabel) ;
+    	ui->predictedLabel_lbl->setText(pl);
+     	con= "Confidence: "+ QString::number(confidence) ;
+    	ui->confidence_lbl->setText(con);
 
 }
 
 void MainWindow::on_uploadTraning_clicked()
 {
-    //refrence http://doc.qt.io/qt-4.8/qfiledialog.html#QFileDialog
-
+	pthread_t thread;
 	QString filename = QFileDialog::getOpenFileName(this, tr("Open Training File"), "/home/pi/Desktop/FaceRecognitionProject/GUI", tr("CSV Files (*.CSV)"));
 	std::string sfilename = filename.toUtf8().constData();
 	std::cout << sfilename << std::endl;
-    ui->status_lbl->setText("Status: Done");
-	try {
-        read_csv(sfilename, images, labels, ';',trainingPath);
-    } catch (cv::Exception& e) {
-        cerr << "Error opening file \"" << sfilename << "\". Reason: " << e.msg << endl;
-        // nothing more we can do
-        exit(1);
-    }
-	model = createLBPHFaceRecognizer();
-	// Label is Waiting (training)
-    ui->status_lbl->setText("Status: Wait.. training..");
-	model->train(images, labels);
-	cout << "Done Training" << endl;
-	// Label is (Ready )
-    ui->status_lbl->setText("Status: Ready");
-	model->set("threshold",myThreshold);
-	
+	pthread_create(&thread, NULL, handleReadingTrainingCSV, (void *)sfilename.c_str());
 }
 
 

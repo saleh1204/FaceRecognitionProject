@@ -30,19 +30,19 @@ static const uint qt_meta_data_MainWindow[] = {
        0,       // signalCount
 
  // slots: signature, parameters, type, tag, flags
-      11,   35,   35,   35, 0x08,
-      36,   35,   35,   35, 0x08,
-      56,   35,   35,   35, 0x08,
-      83,  132,   35,   35, 0x08,
+      12,   11,   11,   11, 0x08,
+      36,   11,   11,   11, 0x08,
+      56,   11,   11,   11, 0x08,
+     124,   83,   11,   11, 0x08,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_MainWindow[] = {
-    "MainWindow\0on_uploadTest_clicked()\0\0"
+    "MainWindow\0\0on_uploadTest_clicked()\0"
     "on_testBt_clicked()\0on_uploadTraning_clicked()\0"
-    "on_img1_rubberBandChanged(QRect,QPointF,QPointF)\0"
     "viewportRect,fromScenePoint,toScenePoint\0"
+    "on_img1_rubberBandChanged(QRect,QPointF,QPointF)\0"
 };
 
 void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
