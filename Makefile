@@ -3,10 +3,16 @@ CFLAGS = `pkg-config --cflags --libs opencv`
 CC = g++
 
 
-all: reco thresholding
+all: reco thresholding eigenfaces fisherfaces
 
 reco: reco.cpp
 	$(CC) reco.cpp -fopenmp -o recognition $(CFLAGS)
+
+eigenfaces: eigenFacesRecognizer.cpp
+	$(CC) eigenFacesRecognizer.cpp -fopenmp -o EigenFaces $(CFLAGS)
+
+fisherfaces: fisherFacesRecognizer.cpp
+	$(CC) fisherFacesRecognizer.cpp -fopenmp -o FisherFaces $(CFLAGS)
 
 thresholding: thresholdRecognition.cpp
 	$(CC) thresholdRecognition.cpp -fopenmp -o RecognitionThresholding $(CFLAGS)
@@ -15,4 +21,4 @@ video: faceRecoVideo.cpp
 	$(CC) faceRecoVideo.cpp -o videoRecognition $(CFLAGS)
 	
 clean: recognition
-	rm -rf recognition videoRecognition RecognitionThresholding
+	rm -rf recognition videoRecognition RecognitionThresholding EigenFaces
