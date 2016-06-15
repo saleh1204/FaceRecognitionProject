@@ -23,6 +23,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <ctime>
 
 using namespace cv;
 using namespace std;
@@ -157,13 +158,28 @@ int main(int argc, const char *argv[]) {
     //      cv::createFisherFaceRecognizer(0, 123.0);
     //
 	cout << "Training The Recognizer with "<< images.size() <<" images \nIt may take some time" << endl;
-    Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
-    model->train(images, labels);
+	
+	// To Calculate how much time Training takes
+	std::clock_t start, end;
+	//start = std::clock();
+	   	
+
+	Ptr<FaceRecognizer> model = createFisherFaceRecognizer();
+	
+	start = time(0); 
+    	model->train(images, labels);
+	end = time(0);
+
+	cout << blue << "Time taken for training is " << (end - start) << " seconds"<< def << endl;	
+
+
 	int mispredicted = 0;
 	int unpredicted = 0;
 	int predictedLabel = 0;
 	double confidence = 0;
 	cout << red << "\tStart testing " << labelsTesting.size() << " images one by one \t It will take a while" << def << endl;
+
+	start = time(0);
 	for (int i=0; i<labelsTesting.size();i++)
 	{
 		model->predict(imagesTesting[i], predictedLabel, confidence);
@@ -178,6 +194,9 @@ int main(int argc, const char *argv[]) {
 		}
 
 	}
+	end = time(0);
+	cout << blue << "Time taken for testing is " << (end - start) << " seconds"<< def << endl;
+	
 	cout << "\t\tUnrecognized : " << unpredicted << endl; cout << "\t\tMispredicted : " << mispredicted << endl; 
 	double accuracy = double (labelsTesting.size() - unpredicted);
 	accuracy = accuracy - mispredicted;
